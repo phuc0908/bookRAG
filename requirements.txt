@@ -1,0 +1,25 @@
+# BookRAG — arXiv 2512.03413
+# Dùng setup.bat để cài (tạo venv riêng, tránh xung đột)
+
+# Numpy 1.x — tránh binary incompatibility với pandas/sklearn
+numpy==1.26.4
+
+# Embeddings (local, không cần API key)
+sentence-transformers==2.7.0
+
+# Knowledge Graph
+networkx==3.2.1
+
+# Utilities
+python-dotenv==1.0.1
+rich==13.7.1
+
+# ── LLM Providers (chỉ cần cái bạn dùng) ──────────────────────
+# Gemini (FREE - khuyến nghị): pip install google-generativeai
+google-generativeai==0.8.4
+
+# Groq (FREE - nhanh nhất): pip install groq
+groq==0.13.1
+
+# OpenAI (trả phí): pip install openai
+openai==1.14.3
