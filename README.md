@@ -11,10 +11,10 @@ Tài liệu mẫu: **Lớp Học Đề Cao Thực Lực** (Youkoso Jitsuryoku Sh
 ## Cài đặt & Chạy
 
 ```
-# Bước 1: Cài đặt môi trường (chỉ làm 1 lần)
+# Bước 1: Cài đặt môi trường
 setup.bat
 
-# Bước 2: Xây dựng BookIndex (chỉ làm 1 lần, hoặc khi đổi tài liệu)
+# Bước 2: Xây dựng BookIndex
 run_build.bat
 
 # Bước 3: Hỏi đáp
@@ -61,4 +61,4 @@ bookrag/
 
 ## Ghi chú về dữ liệu
 
-File `data/classroom_elite.txt` là **tóm tắt có cấu trúc** dùng Markdown heading (`##`, `###`) để hệ thống phân tích cây phân cấp. Trong thực tế, BookRAG dùng layout parser + LLM để tự động trích xuất cấu trúc từ PDF/TXT thô bất kỳ (xem thêm `EXPLAINER.md`).
+File `data/classroom_elite.txt` là **tóm tắt có cấu trúc** dùng Markdown heading (`##`, `###`) để hệ thống phân tích cây phân cấp
