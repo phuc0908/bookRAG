@@ -206,30 +206,62 @@ class Reasoner:
             console.print("  [yellow]Không có entity nào, fallback sang Selector[/yellow]")
             return Selector(self.embed_fn, self.top_k).run(query, index)
 
-        # ── Bước 4: Rank candidate nodes theo semantic score ─────
-        scored: list[tuple[float, TreeNode]] = []
+        # ── Bước 4: Score tất cả candidates ─────────────────────────
+        scored: list[tuple[float, TreeNode]] = []  # (raw_score, node)
         for node_id in candidate_node_ids:
             node = index.tree.get_node(node_id)
             if node is None or not node.content:
                 continue
             if node.embedding is None:
                 node.embedding = self.embed_fn(f"{node.title}\n{node.content}")
-            score = cosine_similarity(query_vec, node.embedding)
-            scored.append((score, node))
+            raw = cosine_similarity(query_vec, node.embedding)
+            scored.append((raw, node))
 
         scored.sort(key=lambda x: x[0], reverse=True)
-        selected = [n for _, n in scored[:self.top_k]]
+
+        # ── Bước 5: Guaranteed inclusion cho seed entities ────────
+        # Cosine similarity đôi khi thấp với câu hỏi dạng "tại sao/như thế nào"
+        # dù section đó có đáp án trực tiếp. Để không bỏ lỡ, luôn giữ lại
+        # node có score cao nhất cho mỗi seed entity, bất kể rank.
+        selected_ids: set[str] = set()
+        selected: list[TreeNode] = []
+
+        for entity in seed_entities:
+            entity_nids = set(index.links.get_nodes(entity))
+            best = next(
+                ((s, n) for s, n in scored if n.node_id in entity_nids and n.node_id not in selected_ids),
+                None
+            )
+            if best:
+                _, node = best
+                selected.append(node)
+                selected_ids.add(node.node_id)
+
+        # Điền phần còn lại bằng top-scored candidates chưa có trong selected
+        for _, node in scored:
+            if len(selected) >= self.top_k:
+                break
+            if node.node_id not in selected_ids:
+                selected.append(node)
+                selected_ids.add(node.node_id)
+
+        score_map = {n.node_id: s for s, n in scored}
 
         table = Table(title="Reasoner Results (Multi-hop)", box=box.SIMPLE)
         table.add_column("Node", style="dim", width=28)
         table.add_column("Title")
         table.add_column("Via entities", style="yellow")
         table.add_column("Score", style="green", width=7)
-        for score, node in scored[:self.top_k]:
+        table.add_column("Guaranteed", style="cyan", width=11)
+        for node in selected:
             entities_in_node = index.links.get_entities_in_node(node.node_id)
             relevant = [e for e in entities_in_node if e in related_entities]
+            # Xác định node này được guaranteed vì seed entity nào
+            guaranteed_by = [e for e in seed_entities
+                             if node.node_id in index.links.get_nodes(e)]
+            g_str = guaranteed_by[0] if guaranteed_by else ""
             table.add_row(node.node_id, node.title[:40],
-                          ", ".join(relevant[:3]), f"{score:.3f}")
+                          ", ".join(relevant[:3]), f"{score_map.get(node.node_id, 0):.3f}", g_str)
         console.print(table)
 
         return selected
